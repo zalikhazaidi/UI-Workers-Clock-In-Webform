@@ -1,0 +1,211 @@
+<?php
+
+include 'SW_Route.php';
+include 'OP_CheckSession.php';
+include 'OP_CheckRecord.php';
+
+$userId = $_SESSION['authenticated_user_id'];
+
+//For Document & History View
+// $relatedDocuments = my_GetRelatedDocs($jobId); // Put in OP_CheckRecord.php
+$relatedJobs = my_GetOrganizationHistory($jobId);
+
+//variable for display purpose
+$bar1UserName = my_GetStaffName($userId);	//my_SharedFunctions
+
+//Set Parameter
+$showBar1_Tech_List = 'Yes';
+$showBar2_General = 'Yes';
+$showBar3_Tech_Detail = 'Yes';
+
+//File output
+// file_put_contents('JobDetails1.txt', print_r($relatedDocuments, true));	
+// file_put_contents('JobDetails2.txt', print_r($relatedJobs, true));	
+
+if(isset($_POST['startJob']))
+{
+	if($recordDetails['recordType'] == 'jobid')
+	{
+		$jobId = $recordDetails['recordId'];
+		$retrivedDetails = my_RetrieveRecord(1, 'Jobs', $jobId);
+		
+		if(empty($actualJobEndDate))
+		{
+			if(empty($actualJobStartDate))
+			{
+				$retrivedDetails[$GLOBALS['cfid_ActualJobStartDate']] = $GLOBALS['TodaysDate'];
+				$retrivedDetails[$GLOBALS['cfid_ActualJobStartTime']] = $GLOBALS['TodaysTime'];
+			}
+		}
+	}
+	else
+	{
+		$ticketId = $recordDetails['recordId'];
+		$retrivedDetails = my_RetrieveRecord(1, 'HelpDesk', $ticketId);
+		
+		if(empty($actualJobEndDate))
+		{
+			if(empty($actualJobStartDate))
+			{
+				$retrivedDetails[$GLOBALS['cfid_ActualStartDate']] = $GLOBALS['TodaysDate'];
+				$retrivedDetails[$GLOBALS['cfid_ActualStartTime']] = $GLOBALS['TodaysTime'];
+			}
+		}
+	}
+
+	my_UpdateRecord(1, $retrivedDetails);
+	
+	echo '<script type="text/javascript">alert("Job started at '.date('d-M-Y (g:i a)').'.")</script>';
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<title>JOB DETAILS</title>
+<meta charset="UTF-8">
+<link href="favicon.ico" rel="icon" type="image/x-icon"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="text/javascript" src="<?php echo $GLOBALS['crmUrl']; ?>/jquery-3.5.1.min.js"></script>
+
+<body class="w3-white">
+<link rel="stylesheet" href="css/w3styles.css">
+<link rel="stylesheet" href="css/UI_myStyleSheet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<?php
+include 'UI_BarTop.php';
+?>
+  <div class="w3-row-padding w3-margin-top" id="myHeader"> </div>
+  <div class="w3-row-padding" style="margin-top: 8px"><br>
+  </div>
+  <br><br>
+  
+  <!-- For ticket that related to job -->
+  <?php echo $extraBreak; ?>
+
+  <!-- Project Section -->
+	<div id="Details" class="w3-container status w3-animate-opacity">
+		<div style="padding-top: 30px">
+		  <table style="width: 100%;">
+		    <tr>
+				<?php echo $setupLayoutButton; //For job baiting ?>
+				<?php
+				if(!empty($actualJobEndDate) || $jobStatus == 'Pending'  || $jobStatus == 'Closed' || $jobStatus == 'Work Performed')
+				{
+					?>
+					<td style="float:right;">
+					  <a href="UI_ClientJobDetails.php?user=<?php echo $userId; ?>&<?php echo $recordType; ?>=<?php echo $recordId;?>"><button type='submit' class="button hcustom9 w3-blue">Feedback</button></a>
+					</td>
+					<?php
+				}
+				
+				if($jobStatus != 'Closed' && $jobStatus != 'Work Performed')
+				{
+					?>
+					<td style="float:right;">
+					  <a href="UI_TechnicianJobPostpone.php?user=<?php echo $userId; ?>&<?php echo $recordType; ?>=<?php echo $recordId; ?>"><button type='submit' class="button hcustom9 w3-yellow">Postpone</button></a>
+					</td>
+					<?php
+				}
+				?>
+		    </tr>
+		  </table>
+		</div>
+		
+		<div class="section w3-orange w3-center">
+		  <label>
+			<b><p style="color:white;margin-top: 0px"><?php echo $recordLabel; ?> Status: <?php echo $jobStatus; ?></p></b>
+		  </label>
+		</div>
+		
+		<div class="section">
+		  <label><b><?php echo $recordLabel; ?> Start</b></label><br>
+		  <label><?php echo $jobStart; ?></label>  
+		</div>
+	<hr>
+		<?php
+		if(!empty($actualJobStartDate))
+		{
+			?>
+			<div class="section">
+				<label><b>Actual <?php echo $recordLabel; ?> Start</b></label><br>
+				<label><?php echo $actualJobStart; ?></label>
+			</div>
+		<hr>
+			<?php
+			if(!empty($actualJobEndDate))
+			{
+				?>
+				<div class="section">
+					<label><b>Actual <?php echo $recordLabel; ?> End</b></label><br>
+					<label><?php echo $actualJobEnd; ?></label>
+				</div>
+			<hr>
+				<?php
+			}
+		}
+		?>
+		
+		<div class="section">
+		    <label><b><?php echo $contactName; ?></b></label><br>
+			<label>Tel: <?php echo $contactMobile; ?></label>
+		</div>
+	<hr>
+		<?php
+		if($recordLabel == 'Job')
+		{
+			?>
+			<div class="section">
+				<label><b>Office Job Remarks</b></label><br>
+				<label><?php echo $officeRemarks; ?></label>
+			</div>
+			<?php
+		}
+		else
+		{
+			?>
+			<div class="section">
+				<label><b>Ticket Description</b></label><br>
+				<label><?php echo $officeRemarks; ?></label>
+			</div>
+			<?php
+		}
+		?>
+	<hr>
+		<div class="section">
+		    <label><b>Premise Type</b></label><br>
+			<label><?php echo $premiseType; ?></label><br>
+		</div>
+	<hr>
+		<div class="section">
+		    <label><b><?php echo $organizationName; ?></b></label><br>
+			<label>Tel: <?php echo $organizationPhone; ?></label><br>
+			<label><?php echo $organizationAddress; ?></label><br>
+		</div>
+		<div class="section">
+			<a class="w3-button hcustom9 w3-dark-gray" href="https://maps.google.com/maps?f=q&source=s_q&hl=en&geocode=&q=<?php echo $mapUrl; ?>" target="_blank" data-role="button" data-ajax="false" >Navigate</a>
+		</div>
+	<hr>
+		<?php 
+		if($jobCategory == 'Baiting')
+		{
+			include 'UI_TechnicianBaitingForm.php';
+		}
+		else if($jobCategory == 'Fumigation')
+		{
+			include 'UI_TechnicianHygieneForm.php';
+		}
+		else
+		{
+			include 'UI_TechnicianGeneralForm.php';
+		}
+		
+		?>
+	</div>
+	
+	<?php 
+	include 'UI_DocumentView.php';
+	include 'UI_HistoryView.php'; 
+	?>
+ 
+</body>
+</html>
